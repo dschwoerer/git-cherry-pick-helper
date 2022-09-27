@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # coding: utf-8
 from git import Repo
 from subprocess import Popen, STDOUT, PIPE, call as subprocesscall
@@ -160,7 +161,7 @@ runopts = dict(
     ignore=[],
     source="HEAD",
     onto=None,
-    dry=True,
+    dry=False,
     merge=False,
 )
 
