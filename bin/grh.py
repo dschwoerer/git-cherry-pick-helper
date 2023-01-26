@@ -86,11 +86,16 @@ def set_merge(opts):
     runopts["merge"] = {"false": False, "true": True}[opt]
 
 
+def set_show_black(opts):
+    opt = _single_from_input(opts, True, "Can only enable or disable an option.")
+    runopts["show_blacklisted"] = {"false": False, "true": True}[opt]
+
+
 def print_options(opts):
     CONT
 
 
-def set_ignore(opts):
+def set_ignore_branches(opts):
     set_many_branches(opts, "ignore")
 
 
@@ -163,6 +168,7 @@ runopts = dict(
     onto=None,
     dry=False,
     merge=False,
+    show_black=False,
 )
 
 
@@ -345,7 +351,9 @@ def print_show(opts):
 def _print_commit(i):
     com, s = commits[i]
     fmt = f"%{_int_log10(len(commits))+1}d: %1s %7s %s"
-    show = {"notin": "  ", "maybe": "❓", "picked": "✅"}
+    show = {"notin": "  ", "maybe": "❓", "picked": "✅", "ignored": "👻"}
+    if s == "ignored" and not runopts["show_black"]:
+        return
     print(fmt % (i, show[s], com.hexsha[:7], com.message.split("\n")[0]))
 
 
@@ -360,6 +368,10 @@ def print_commits(opts):
     print("❓ maybe already picked    ✅ selected for picking")
     for i in range(len(commits)):
         _print_commit(i)
+    if not runopts["show_black"]:
+        hidden = len([s for c, s in commits if s == "ignored"])
+        if hidden:
+            print(f"Not showing {hidden} blacklisted commits")
 
 
 current_branches = {}
@@ -375,6 +387,24 @@ def delete_branch(opts):
     for opt in opts:
         if opt:
             current_branches.pop(opt)
+
+
+def blacklist_commits(opts):
+    global blacklist
+    for opt in opts:
+        if opt:
+            opt = int(opt)
+            # current_branches[branch].append(commits[opt][0])
+            commit = commits[opt][0]
+            blacklist.append(str(commit))
+            commits[opt] = commit, "ignored"
+
+
+def write_blacklist_file(blacklist_file):
+    with open(blacklist_file + ".tmp", "w") as f:
+        for black in blacklist:
+            f.write(black + "\n")
+    os.rename(blacklist_file + ".tmp", blacklist_file)
 
 
 def add_to_branch(opts):
@@ -394,6 +424,7 @@ def suggest_add(text):
 
 
 raiseError = False
+blacklist = []
 
 
 def current_commits_or_all(text):
@@ -410,9 +441,11 @@ commands = {
             "error": (set_error, ["print", "raise"]),
             "dryrun": (set_dryrun, ["false", "true"]),
             "merge": (set_merge, ["false", "true"]),
-            "bla": (fu, None),
+            "show_blacklist": (set_show_black, ["false", "true"]),
+            # "bla": (fu, None),
         },
     ),
+    "blacklist_commits": (blacklist_commits, current_commits_or_all),
     "update": (update_commits, ["quiet"]),
     "print": (print_commits, None),
     "run": (runit, None),
@@ -441,6 +474,15 @@ def main():
     except FileNotFoundError:
         pass
     atexit.register(readline.write_history_file, histfile)
+
+    blacklist_file = os.path.join(os.path.expanduser("~"), ".grh_blacklist")
+    try:
+        with open(blacklist_file) as f:
+            global blacklist
+            blacklist = [l.strip() for l in f]
+    except FileNotFoundError:
+        pass
+    atexit.register(write_blacklist_file, blacklist_file)
 
     while True:
         try:
@@ -494,6 +536,7 @@ def _get_available_commits(include, excludes):
     commits = sorted(this, key=lambda a: a.authored_date, reverse=True)
     # print(len(commits), "that are not identical")
     cleaned_commits = []
+    blackset = set(blacklist)
     picked = set()
     for comms in current_branches.values():
         picked.update(comms)
@@ -503,6 +546,9 @@ def _get_available_commits(include, excludes):
                 continue
         if c in picked:
             cleaned_commits.append((c, "picked"))
+            continue
+        if str(c) in blackset:
+            cleaned_commits.append((c, "ignored"))
             continue
         try:
             candidates = todel_by_date[c.authored_date]
