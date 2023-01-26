@@ -67,9 +67,9 @@ def meld(*args):
         args = args[i], args[j]
         assert worst >= similar(*args)
     for f, t in zip("ab", args):
-        with open(f, "w") as f:
+        with open(".grh." + f, "w") as f:
             f.write(t)
-    cmd("meld a b")
+    cmd("meld .grh.a .grh.b")
 
 
 def set_state():
