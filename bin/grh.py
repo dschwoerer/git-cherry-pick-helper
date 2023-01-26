@@ -435,9 +435,6 @@ commands = {
     "set": (
         None,
         {
-            "ignore": (set_ignore, get_branches),
-            "source": (set_source, get_branches),
-            "onto": (set_onto, get_branches),
             "error": (set_error, ["print", "raise"]),
             "dryrun": (set_dryrun, ["false", "true"]),
             "merge": (set_merge, ["false", "true"]),
@@ -445,16 +442,19 @@ commands = {
             # "bla": (fu, None),
         },
     ),
+    "ignore_branch": (set_ignore_branches, get_branches),
     "blacklist_commits": (blacklist_commits, current_commits_or_all),
+    "source": (set_source, get_branches),
+    "onto": (set_onto, get_branches),
     "update": (update_commits, ["quiet"]),
     "print": (print_commits, None),
-    "run": (runit, None),
-    "exit": (myexit, None),
     "new": (new_branch, []),
     "delete": (delete_branch, current_branches),
     "add": (add_to_branch, suggest_add),
     "info": (print_info, current_commits_or_all),
     "show": (print_show, current_commits_or_all),
+    "run": (runit, None),
+    "exit": (myexit, None),
 }
 
 
