@@ -11,6 +11,9 @@ import atexit
 import os
 
 
+__version__ = "0.1.0"
+
+
 def cmd(cmd, allow_failure=False):
     status = subprocesscall(cmd, shell=True)
     if allow_failure:
