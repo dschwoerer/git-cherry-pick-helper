@@ -67,9 +67,9 @@ def meld(*args):
         args = args[i], args[j]
         assert worst >= similar(*args)
     for f, t in zip("ab", args):
-        with open(".grh." + f, "w") as f:
+        with open(".gcph." + f, "w") as f:
             f.write(t)
-    cmd("meld .grh.a .grh.b")
+    cmd("meld .gcph.a .gcph.b")
 
 
 def set_state():
@@ -153,7 +153,7 @@ def runit(args):
             if s:
                 while repo.is_dirty():
                     wait_user("Resolve the conflicts and commit the changes")
-    print("Thank you for using grh 🎉. Please call again 👋")
+    print("Thank you for using gcph 🎉. Please call again 👋")
     sys.exit(0)
 
 
@@ -255,7 +255,6 @@ def myexec(x):
     while len(parts):
         part = parts.pop(0)
         past.append(part)
-        # for i, part in enumerate(parts):
         try:
             temp = subs[part]
         except KeyError:
@@ -364,7 +363,7 @@ def _print_commit_other(com, pre=""):
 
 def print_commits(opts):
     if commits is None:
-        update_commits(opts)
+        return update_commits()
     print("❓ maybe already picked    ✅ selected for picking")
     for i in range(len(commits)):
         _print_commit(i)
@@ -394,7 +393,6 @@ def blacklist_commits(opts):
     for opt in opts:
         if opt:
             opt = int(opt)
-            # current_branches[branch].append(commits[opt][0])
             commit = commits[opt][0]
             blacklist.append(str(commit))
             commits[opt] = commit, "ignored"
@@ -409,6 +407,8 @@ def write_blacklist_file(blacklist_file):
 
 def add_to_branch(opts):
     branch = opts.pop(0)
+    if branch not in current_branches:
+        current_branches = []
     for opt in opts:
         if opt:
             opt = int(opt)
@@ -432,6 +432,16 @@ def current_commits_or_all(text):
 
 
 commands = {
+    "source": (set_source, get_branches),
+    "onto": (set_onto, get_branches),
+    "ignore_branch": (set_ignore_branches, get_branches),
+    "update": (update_commits, ["quiet"]),
+    "print": (print_commits, None),
+    "blacklist_commits": (blacklist_commits, current_commits_or_all),
+    "add": (add_to_branch, suggest_add),
+    "delete": (delete_branch, current_branches),
+    "info": (print_info, current_commits_or_all),
+    "show": (print_show, current_commits_or_all),
     "set": (
         None,
         {
@@ -442,17 +452,6 @@ commands = {
             # "bla": (fu, None),
         },
     ),
-    "ignore_branch": (set_ignore_branches, get_branches),
-    "blacklist_commits": (blacklist_commits, current_commits_or_all),
-    "source": (set_source, get_branches),
-    "onto": (set_onto, get_branches),
-    "update": (update_commits, ["quiet"]),
-    "print": (print_commits, None),
-    "new": (new_branch, []),
-    "delete": (delete_branch, current_branches),
-    "add": (add_to_branch, suggest_add),
-    "info": (print_info, current_commits_or_all),
-    "show": (print_show, current_commits_or_all),
     "run": (runit, None),
     "exit": (myexit, None),
 }
@@ -466,7 +465,7 @@ def main():
     readline.set_completer_delims(" \t\n;")
     # readline.set_pre_input_hook(deb1)
     readline.parse_and_bind("tab: complete")
-    histfile = os.path.join(os.path.expanduser("~"), ".grh_history")
+    histfile = os.path.join(os.path.expanduser("~"), ".gcph_history")
     try:
         readline.read_history_file(histfile)
         # default history len is -1 (infinite), which may grow unruly
@@ -475,7 +474,7 @@ def main():
         pass
     atexit.register(readline.write_history_file, histfile)
 
-    blacklist_file = os.path.join(os.path.expanduser("~"), ".grh_blacklist")
+    blacklist_file = os.path.join(os.path.expanduser("~"), ".gcph_blacklist")
     try:
         with open(blacklist_file) as f:
             global blacklist
@@ -486,7 +485,7 @@ def main():
 
     while True:
         try:
-            x = input("grh> ")
+            x = input("gcph> ")
         except EOFError:
             print("exit")
             sys.exit(0)
@@ -560,35 +559,6 @@ def _get_available_commits(include, excludes):
             cleaned_commits.append((c, "maybe"))
     commits = cleaned_commits
 
-    # print(len(commits), "that are not nearly identical")
-
 
 if __name__ == "__main__":
     main()
-
-
-# print(len(bad))
-
-# c1 = c2 = 0
-# for k, v in dates.items():
-#     if len(v) > 1:
-#         diffs = [clean_git_show(c) for c in v]
-#         same = True
-#         for d in diffs[1:]:
-#             if d != diffs[0]:
-#                 # run_meld(d, diffs[0])
-#                 same = False
-#         if not same:
-#             sim = similar(*diffs)
-#             print(v, sim)  # , *diffs)
-#             # if sim < 0.9:
-#             #    meld(*diffs)
-#             c1 += 1
-#         else:
-#             c2 += 1
-#         print(f"{c2} are identical, while {c1} differ", end="\r")
-#         sys.stdout.flush()
-#     # if c1 + c2 > 10:
-#     #     break
-
-# print()
