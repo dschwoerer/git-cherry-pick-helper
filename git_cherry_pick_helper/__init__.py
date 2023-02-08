@@ -11,7 +11,7 @@ import atexit
 import os
 
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 
 def cmd(cmd, allow_failure=False):
