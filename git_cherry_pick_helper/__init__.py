@@ -366,7 +366,7 @@ def _print_commit_other(com, pre=""):
 
 def print_commits(opts):
     if commits is None:
-        return update_commits()
+        return update_commits(opts)
     print("❓ maybe already picked    ✅ selected for picking")
     for i in range(len(commits)):
         _print_commit(i)
@@ -410,8 +410,9 @@ def write_blacklist_file(blacklist_file):
 
 def add_to_branch(opts):
     branch = opts.pop(0)
+    global current_branches
     if branch not in current_branches:
-        current_branches = []
+        current_branches[branch] = []
     for opt in opts:
         if opt:
             opt = int(opt)
